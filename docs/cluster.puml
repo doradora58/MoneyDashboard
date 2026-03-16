@@ -1,0 +1,8 @@
+@startuml
+[doradora1 (Master)] as Master
+[doradora2 (Worker)] as W1
+[doradora3 (Worker)] as W2
+
+Master <-down-> W1 : Join via Token
+Master <-down-> W2 : Join via Token
+@enduml

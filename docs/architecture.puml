@@ -1,0 +1,24 @@
+@startuml
+skinparam componentStyle uml2
+
+node "doradora1 (Pi4/Master)" as Master {
+  [K3s Control Plane]
+}
+
+node "doradora2 (Pi5/Worker)" as Worker1 {
+  [App Pods (API / AI / DB)]
+}
+
+node "doradora3 (Pi5/Worker)" as Worker2 {
+  [Frontend (React)]
+  [Cloudflare Tunnel]
+}
+
+storage "NAS (NFS)" as NAS
+
+Master -down-> Worker1
+Master -down-> Worker2
+Worker1 .down.> NAS : Mount DB Data
+Worker2 -up-> Cloudflare : Secure Access (Tunnel)
+
+@enduml
