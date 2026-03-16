@@ -12,6 +12,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to K3s
+        env:
+          KUBECONFIG: /home/doradora1/.kube/config
         run: |
           kubectl get nodes
           kubectl apply -f infrastructure/k8s/
