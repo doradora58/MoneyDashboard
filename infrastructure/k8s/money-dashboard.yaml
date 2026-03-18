@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: money-dashboard
-        image: ghcr.io/YOUR_GITHUB_USER_NAME/money-dashboard:latest
+        image: ghcr.io/doradora58/money-dashboard:latest
         ports:
         - containerPort: 3000
 ---
