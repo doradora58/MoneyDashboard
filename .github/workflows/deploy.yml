@@ -16,4 +16,4 @@ jobs:
           KUBECONFIG: /home/doradora1/.kube/config
         run: |
           kubectl get nodes
-          kubectl apply -f infrastructure/k8s/
+          kubectl apply -R -f infrastructure/k8s/
