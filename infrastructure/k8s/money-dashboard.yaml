@@ -16,6 +16,7 @@ spec:
       containers:
       - name: money-dashboard
         image: ghcr.io/doradora58/money-dashboard:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
 ---
