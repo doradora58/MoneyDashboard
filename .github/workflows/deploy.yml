@@ -12,7 +12,7 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       
@@ -37,6 +37,22 @@ jobs:
     needs: build-and-push # ビルドが終わってから実行
     runs-on: self-hosted
     steps:
+      - uses: actions/checkout@v4
+      
+      # Nodeのセットアップなど（既存のステップ）
+      - name: Install dependencies
+        run: npm install
+
+      # 【追加】DBマイグレーションを実行
+      - name: Prisma Migrate Deploy
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # アプリのデプロイなど（既存のステップ）
+      - name: Deploy App
+        run: ./deploy-script.sh
+        
       - name: Checkout code
         uses: actions/checkout@v4
 
