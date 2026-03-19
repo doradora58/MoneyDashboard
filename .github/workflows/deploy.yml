@@ -41,7 +41,7 @@ jobs:
       
       # Nodeのセットアップなど（既存のステップ）
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # 【追加】DBマイグレーションを実行
       - name: Prisma Migrate Deploy
@@ -52,7 +52,7 @@ jobs:
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy App
         run: ./deploy-script.sh
-        
+
       - name: Checkout code
         uses: actions/checkout@v4
 
