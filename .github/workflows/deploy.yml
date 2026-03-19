@@ -41,14 +41,13 @@ jobs:
       
       - name: Prisma Migrate Deploy
         env:
-          # ここで Secret を環境変数にマッピング
-          DB_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }} # 直接この名前で定義
         run: |
           docker run --rm \
             --network host \
             -v ${{ github.workspace }}/apps/frontend/money_dashboard/prisma:/app/prisma \
             -w /app \
-            -e DATABASE_URL="$DB_URL" \
+            -e DATABASE_URL \
             ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             npx prisma@6 migrate deploy
 
