@@ -39,9 +39,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Prisma Migrate Deploy (via Docker)
+      - name: Prisma Migrate Deploy
         run: |
           docker run --rm \
+            --network host \
+            -v ${{ github.workspace }}/apps/frontend/money_dashboard/prisma:/app/prisma \
+            -w /app \
             -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
             ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             npx prisma migrate deploy
