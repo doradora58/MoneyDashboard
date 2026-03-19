@@ -32,22 +32,19 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: ghcr.io/${{ github.repository_owner }}/money-dashboard:latest
-          
+
   deploy:
     needs: build-and-push # ビルドが終わってから実行
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       
-      # Nodeのセットアップなど（既存のステップ）
-      - name: Install dependencies
-        run: npm install
-
-      # 【追加】DBマイグレーションを実行
-      - name: Prisma Migrate Deploy
-        run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Prisma Migrate Deploy (via Docker)
+        run: |
+          docker run --rm \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
+            npx prisma migrate deploy
 
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy App
