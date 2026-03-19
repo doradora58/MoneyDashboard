@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script async src="https://analytics.doradora58.com/script.js" data-website-id="あなたのID"></script>
+        <script async src="https://analytics.doradora58.com/script.js" data-website-id="883a8139-95a9-465e-ade4-d104fb1ca302"></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
