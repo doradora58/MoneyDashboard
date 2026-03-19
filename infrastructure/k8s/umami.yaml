@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: umami
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: umami
+  template:
+    metadata:
+      labels:
+        app: umami
+    spec:
+      containers:
+      - name: umami
+        image: ghcr.io/umami-software/umami:postgresql-latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          # postgres-service は先ほど作ったDBのサービス名です
+          value: "postgresql://doradora:password@postgres-service:5432/umami"
+        - name: APP_SECRET
+          value: "replace-with-a-random-string" # 適当な長い文字列に変えてください
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: umami-service
+spec:
+  selector:
+    app: umami
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
