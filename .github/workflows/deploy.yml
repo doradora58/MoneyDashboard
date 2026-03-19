@@ -41,7 +41,8 @@ jobs:
       
       - name: Prisma Migrate Deploy
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }} # 直接この名前で定義
+          # ここで Secret を環境変数にセット（この時点では伏せ字にならない）
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           docker run --rm \
             --network host \
