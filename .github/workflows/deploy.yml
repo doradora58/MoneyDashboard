@@ -38,7 +38,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      
+      - name: Test DB Connection from Runner
+        run: |
+          DB_HOST=$(echo "${{ secrets.DATABASE_URL }}" | awk -F'[@:/]' '{print $(NF-2)}')
+          DB_PORT=$(echo "${{ secrets.DATABASE_URL }}" | awk -F'[:/]' '{print $(NF-1)}')
+          echo "Testing connection to $DB_HOST on port $DB_PORT"
+          nc -zv $DB_HOST $DB_PORT
       - name: Prisma Migrate Deploy
         env:
           # ここで Secret を環境変数にセット（この時点では伏せ字にならない）
@@ -55,9 +60,6 @@ jobs:
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy App
         run: ./deploy-script.sh
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Deploy to K3s
         env:
