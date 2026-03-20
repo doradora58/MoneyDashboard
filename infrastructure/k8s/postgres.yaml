@@ -37,9 +37,16 @@ kind: Service
 metadata:
   name: postgres-service
 spec:
+  # ServiceのタイプをNodePortに変更
+  type: NodePort
   selector:
     app: postgres
   ports:
     - protocol: TCP
+      # Serviceがクラスター内部で公開するポート
       port: 5432
+      # Pod（コンテナ）がリッスンしているポート
       targetPort: 5432
+      # クラスター外部に公開するポート
+      # このポート番号（30000-32767の範囲）で外部からアクセスする
+      nodePort: 30432
