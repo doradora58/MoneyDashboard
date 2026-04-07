@@ -71,7 +71,6 @@ jobs:
             --image=ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             --restart=Never \
             --rm \
-            -i \
             --overrides='{"spec":{"containers":[{"name":"prisma-migrate","image":"ghcr.io/${{ github.repository_owner }}/money-dashboard:latest","volumeMounts":[{"name":"prisma-vol","mountPath":"/app/prisma"}]}],"volumes":[{"name":"prisma-vol","hostPath":{"path":"/home/doradora1/_work/MoneyDashboard/MoneyDashboard/prisma"}}]}}' \
             -- npx prisma migrate deploy
       # アプリのデプロイなど（既存のステップ）
