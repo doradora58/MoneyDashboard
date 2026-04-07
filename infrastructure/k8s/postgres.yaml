@@ -1,7 +1,49 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: default
+type: Opaque
+stringData:
+  password: "your-secure-password-here"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+  type: ClusterIP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -19,34 +61,19 @@ spec:
         - containerPort: 5432
         env:
         - name: POSTGRES_DB
-          value: "umami" 
+          value: money_db
         - name: POSTGRES_USER
-          value: "doradora"
+          value: postgres
         - name: POSTGRES_PASSWORD
-          value: "password"
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+          subPath: postgres
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
           claimName: postgres-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-service
-spec:
-  # ServiceのタイプをNodePortに変更
-  type: NodePort
-  selector:
-    app: postgres
-  ports:
-    - protocol: TCP
-      # Serviceがクラスター内部で公開するポート
-      port: 5432
-      # Pod（コンテナ）がリッスンしているポート
-      targetPort: 5432
-      # クラスター外部に公開するポート
-      # このポート番号（30000-32767の範囲）で外部からアクセスする
-      nodePort: 30432
