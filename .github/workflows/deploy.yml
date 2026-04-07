@@ -67,18 +67,26 @@ jobs:
           KUBECONFIG: /home/doradora1/.kube/config
           DATABASE_URL: postgresql://postgres:your-secure-password-here@postgres.default.svc.cluster.local:5432/money_db
         run: |
-          kubectl run prisma-migrate-$(date +%s) \
+          POD_NAME="prisma-migrate-$(date +%s)"
+          
+          kubectl run $POD_NAME \
             --image=ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             --restart=Never \
-            -i --attach \
             --overrides='{"spec":{"containers":[{"name":"prisma-migrate","image":"ghcr.io/${{ github.repository_owner }}/money-dashboard:latest","volumeMounts":[{"name":"prisma-vol","mountPath":"/app/prisma"}]}],"volumes":[{"name":"prisma-vol","hostPath":{"path":"/home/doradora1/_work/MoneyDashboard/MoneyDashboard/prisma"}}]}}' \
             -- npx prisma migrate deploy
           
-          # Pod の完了を待機
-          kubectl wait --for=condition=Completed pod -l app=prisma-migrate --timeout=300s || true
+          # Pod の完了を待機（最大5分）
+          kubectl wait --for=condition=Ready pod/$POD_NAME --timeout=300s || true
+          sleep 10
+          
+          # ログを確認
+          kubectl logs $POD_NAME || true
+          
+          # Pod のステータス確認
+          kubectl get pod $POD_NAME -o jsonpath='{.status.phase}'
           
           # Pod を削除
-          kubectl delete pod -l app=prisma-migrate --ignore-not-found=true
+          kubectl delete pod $POD_NAME --ignore-not-found=true
 
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy App
