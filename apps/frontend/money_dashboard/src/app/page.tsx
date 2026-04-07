@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { calculateInvestment } from "@/lib/calculations"
 import { Sparkles, TrendingUp, Wallet } from "lucide-react"
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 
 export default function MoneyDashboard() {
   const [amount, setAmount] = useState(30000)
@@ -17,6 +18,10 @@ export default function MoneyDashboard() {
   const data = useMemo(() => calculateInvestment(amount, rate, years), [amount, rate, years])
   const lastData = data[data.length - 1]
 
+  const adjustAmount = (delta: number) => setAmount(prev => clamp(prev + delta, 0, 100000))
+  const adjustRate = (delta: number) => setRate(prev => Number(clamp(prev + delta, 0, 15).toFixed(1)))
+  const adjustYears = (delta: number) => setYears(prev => clamp(prev + delta, 0, 40))
+  
   return (
     <div className="min-h-screen bg-background p-6 md:p-12 space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col gap-2">
@@ -25,7 +30,6 @@ export default function MoneyDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左側：入力コントロール */}
         <Card className="lg:col-span-4 border-none shadow-lg bg-secondary/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Wallet className="w-5 h-5" /> シミュレーション設定</CardTitle>
@@ -36,7 +40,27 @@ export default function MoneyDashboard() {
                 <Label>毎月の積立額</Label>
                 <span className="text-primary">{amount.toLocaleString()}円</span>
               </div>
-              <Slider value={[amount]} max={100000} step={1000} onValueChange={(v) => setAmount(v[0])} />
+              <div className="flex items-center gap-3">
+                <div className="flex gap-2">
+                  <button
+                    className="h-10 w-10 rounded-md border border-border bg-background text-sm font-semibold"
+                    onClick={() => adjustAmount(-1000)}
+                  >
+                    -
+                  </button>
+                </div>
+                <Slider value={[amount]} max={100000} step={1000} onValueChange={(v) => setAmount(v[0])} className="flex-1" />
+                
+                <div className="flex gap-2">
+                  <button
+                    className="h-10 w-10 rounded-md border border-border bg-background text-sm font-semibold"
+                    onClick={() => adjustAmount(1000)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              
             </div>
 
             <div className="space-y-4">
@@ -44,7 +68,25 @@ export default function MoneyDashboard() {
                 <Label>想定利回り (年率)</Label>
                 <span className="text-primary">{rate}%</span>
               </div>
-              <Slider value={[rate]} max={15} step={0.1} onValueChange={(v) => setRate(v[0])} />
+              <div className="flex items-center gap-3">
+                <div className="flex gap-2">
+                  <button
+                    className="h-10 w-10 rounded-md border border-border bg-background text-sm font-semibold"
+                    onClick={() => adjustRate(-0.1)}
+                  >
+                    -
+                  </button>
+                </div>
+                <Slider value={[rate]} max={15} step={0.1} onValueChange={(v) => setRate(v[0])} className="flex-1" />
+                <div className="flex gap-2">
+                  <button
+                    className="h-10 w-10 rounded-md border border-border bg-background text-sm font-semibold"
+                    onClick={() => adjustRate(0.1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -52,7 +94,25 @@ export default function MoneyDashboard() {
                 <Label>積立期間</Label>
                 <span className="text-primary">{years}年</span>
               </div>
-              <Slider value={[years]} max={40} step={1} onValueChange={(v) => setYears(v[0])} />
+              <div className="flex items-center gap-3">
+                <div className="flex gap-2">
+                  <button
+                    className="h-10 w-10 rounded-md border border-border bg-background text-sm font-semibold"
+                    onClick={() => adjustYears(-1)}
+                  >
+                    -
+                  </button>
+                </div>
+                <Slider value={[years]} max={40} step={1} onValueChange={(v) => setYears(v[0])} className="flex-1" />
+                <div className="flex gap-2">
+                  <button
+                    className="h-10 w-10 rounded-md border border-border bg-background text-sm font-semibold"
+                    onClick={() => adjustYears(1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
