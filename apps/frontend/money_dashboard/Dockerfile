@@ -10,18 +10,24 @@ COPY prisma ./prisma
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 # Prisma Client を生成
-RUN cd apps/frontend/money_dashboard && pnpm prisma generate
+RUN pnpm prisma generate
 
-RUN pnpm build
+# アプリをビルド
+RUN cd apps/frontend/money_dashboard && pnpm build
 
 FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV production
-# 実行に必要な最小限のファイルだけをコピー
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
 
-ENV HOSTNAME "0.0.0.0"
-ENV PORT 3000
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+# 実行に必要な最小限のファイルだけをコピー
+COPY --from=builder /app/apps/frontend/money_dashboard/.next/standalone ./
+COPY --from=builder /app/apps/frontend/money_dashboard/.next/static ./.next/static
+COPY --from=builder /app/apps/frontend/money_dashboard/public ./public
+
+EXPOSE 3000
+
 CMD ["node", "server.js"]
