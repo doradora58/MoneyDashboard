@@ -73,17 +73,32 @@ jobs:
             --image=ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             --restart=Never \
             --overrides='{"spec":{"containers":[{"name":"prisma-migrate","image":"ghcr.io/${{ github.repository_owner }}/money-dashboard:latest","volumeMounts":[{"name":"prisma-vol","mountPath":"/app/prisma"}]}],"volumes":[{"name":"prisma-vol","hostPath":{"path":"/home/doradora1/_work/MoneyDashboard/MoneyDashboard/prisma"}}]}}' \
-            -- npx prisma migrate deploy
+            -- npx prisma migrate deploy &
           
-          # Pod の完了を待機（最大5分）
-          kubectl wait --for=condition=Ready pod/$POD_NAME --timeout=300s || true
-          sleep 10
+          BG_PID=$!
           
-          # ログを確認
+          # Pod が作成されるまで待機
+          sleep 5
+          
+          # ログをバックグラウンドで出力
+          kubectl logs -f $POD_NAME &
+          LOGS_PID=$!
+          
+          # Pod の完了を待機
+          while kubectl get pod $POD_NAME &>/dev/null; do
+            STATUS=$(kubectl get pod $POD_NAME -o jsonpath='{.status.phase}')
+            echo "Pod status: $STATUS"
+            if [[ "$STATUS" == "Succeeded" ]] || [[ "$STATUS" == "Failed" ]]; then
+              break
+            fi
+            sleep 5
+          done
+          
+          # ログプロセスを終了
+          kill $LOGS_PID 2>/dev/null || true
+          
+          # 最終ログを確認
           kubectl logs $POD_NAME || true
-          
-          # Pod のステータス確認
-          kubectl get pod $POD_NAME -o jsonpath='{.status.phase}'
           
           # Pod を削除
           kubectl delete pod $POD_NAME --ignore-not-found=true
