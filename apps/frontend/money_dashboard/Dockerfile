@@ -5,12 +5,8 @@ WORKDIR /app
 # monorepo のルートから必要なファイルをコピー
 COPY package.json pnpm-lock.yaml ./
 COPY apps/frontend/money_dashboard ./apps/frontend/money_dashboard
-COPY prisma ./prisma
 
 RUN npm install -g pnpm && pnpm install --frozen-lockfile
-
-# Prisma Client を生成
-RUN pnpm prisma generate
 
 # アプリをビルド
 RUN cd apps/frontend/money_dashboard && pnpm build
