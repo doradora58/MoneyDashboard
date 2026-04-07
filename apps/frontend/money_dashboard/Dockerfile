@@ -2,7 +2,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json ./
+COPY apps/frontend/money_dashboard/package.json ./
+COPY apps/frontend/money_dashboard/ ./
 
 RUN npm install
 
