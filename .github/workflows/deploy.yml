@@ -94,5 +94,16 @@ jobs:
           KUBECONFIG: /home/doradora1/.kube/config
         run: |
           kubectl get nodes
+          
+          # 既存の postgres PVC を削除（リサイズエラー回避）
+          kubectl delete pvc postgres-pvc --ignore-not-found=true
+          
+          # 少し待機
+          sleep 5
+          
+          # マニフェストを適用
           kubectl apply -R -f infrastructure/k8s/
+          
+          # Deployment の再起動
           kubectl rollout restart deployment/money-dashboard -n default || true
+          kubectl rollout restart deployment/postgres -n default || true
