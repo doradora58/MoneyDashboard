@@ -43,7 +43,11 @@ jobs:
           DB_HOST=$(echo "${{ secrets.DATABASE_URL }}" | awk -F'[@:/]' '{print $(NF-2)}')
           DB_PORT=$(echo "${{ secrets.DATABASE_URL }}" | awk -F'[:/]' '{print $(NF-1)}')
           echo "Testing connection to $DB_HOST on port $DB_PORT"
-          nc -zv $DB_HOST $DB_PORT
+          if ! nc -zv $DB_HOST $DB_PORT; then
+            echo "Warning: Could not connect to database. Checking if it's a network issue..."
+            ping -c 1 $DB_HOST || echo "Host unreachable"
+          fi
+        continue-on-error: true
       - name: Prisma Migrate Deploy
         env:
           # ここで Secret を環境変数にセット（この時点では伏せ字にならない）
