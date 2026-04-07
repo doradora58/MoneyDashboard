@@ -70,9 +70,16 @@ jobs:
           kubectl run prisma-migrate-$(date +%s) \
             --image=ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             --restart=Never \
-            --rm \
+            -i --attach \
             --overrides='{"spec":{"containers":[{"name":"prisma-migrate","image":"ghcr.io/${{ github.repository_owner }}/money-dashboard:latest","volumeMounts":[{"name":"prisma-vol","mountPath":"/app/prisma"}]}],"volumes":[{"name":"prisma-vol","hostPath":{"path":"/home/doradora1/_work/MoneyDashboard/MoneyDashboard/prisma"}}]}}' \
             -- npx prisma migrate deploy
+          
+          # Pod の完了を待機
+          kubectl wait --for=condition=Completed pod -l app=prisma-migrate --timeout=300s || true
+          
+          # Pod を削除
+          kubectl delete pod -l app=prisma-migrate --ignore-not-found=true
+
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy App
         run: ./deploy-script.sh
