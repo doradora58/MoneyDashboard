@@ -48,21 +48,29 @@ jobs:
             ping -c 1 $DB_HOST || echo "Host unreachable"
           fi
         continue-on-error: true
+      - name: Deploy PostgreSQL (if not exists)
+        env:
+          KUBECONFIG: /home/doradora1/.kube/config
+        run: |
+          if ! kubectl get svc postgres &> /dev/null; then
+            echo "PostgreSQL をデプロイ中..."
+            kubectl apply -f infrastructure/k8s/postgres.yaml
+            kubectl wait --for=condition=ready pod -l app=postgres --timeout=300s
+          else
+            echo "PostgreSQL は既に起動しています"
+          fi
+
       - name: Prisma Migrate Deploy
         env:
           KUBECONFIG: /home/doradora1/.kube/config
           DATABASE_URL: postgresql://postgres:your-secure-password-here@postgres.default.svc.cluster.local:5432/money_db
         run: |
-          kubectl run prisma-migrate \
+          kubectl run prisma-migrate-$(date +%s) \
             --image=ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
             --restart=Never \
             --rm \
             -i \
-            -- npx prisma@6 migrate deploy
-          
-          # Pod が完了するまで待機
-          kubectl wait --for=condition=ready pod/prisma-migrate --timeout=300s || true
-
+            -- npx prisma migrate deploy
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy App
         run: ./deploy-script.sh
