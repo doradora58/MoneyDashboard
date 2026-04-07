@@ -89,9 +89,6 @@ jobs:
           kubectl delete pod $POD_NAME --ignore-not-found=true
 
       # アプリのデプロイなど（既存のステップ）
-      - name: Deploy App
-        run: ./deploy-script.sh
-
       - name: Deploy to K3s
         env:
           KUBECONFIG: /home/doradora1/.kube/config
