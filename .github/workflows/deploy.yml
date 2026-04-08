@@ -108,7 +108,11 @@ jobs:
 
           sleep 2
 
-          kubectl apply -R -f infrastructure/k8s/
+          kubectl apply -f infrastructure/k8s/postgres.yaml
+          kubectl apply -f infrastructure/k8s/money-dashboard.yaml
+          kubectl apply -f infrastructure/k8s/nginx-deployment.yaml
+          kubectl apply -f infrastructure/k8s/nginx-service.yaml
+          kubectl apply -R -f infrastructure/k8s/monitoring
           kubectl rollout restart deployment/money-dashboard -n default || true
           kubectl rollout status deployment/money-dashboard -n default --timeout=180s || true
           kubectl rollout restart deployment/postgres -n default || true
