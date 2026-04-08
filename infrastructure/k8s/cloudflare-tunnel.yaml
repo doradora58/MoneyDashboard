@@ -19,4 +19,4 @@ spec:
         - --no-autoupdate
         - run
         - --token
-        - eyJhIjoiMjcwNGQ2NTllNzgzYjBmYjViY2ZkNzZiZDVkYTA0NTQiLCJ0IjoiNTU3MDhiMjgtZTgwZC00ZTViLTgwYjctY2NmNWZjYzk4OTg4IiwicyI6Ik1tVTNNVGt4WkRndE5HRmtOUzAwTXprMkxUazFORGd0WlRNeVlXVmhNVFV3T1RKayJ9
+        - ${CLOUDFLARE_TOKEN}

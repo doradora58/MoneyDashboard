@@ -19,9 +19,9 @@ spec:
         - containerPort: 3000
         env:
         - name: DATABASE_URL
-          value: postgresql://postgres:your-secure-password-here@postgres.default.svc.cluster.local:5432/umami
+          value: ${UMAMI_DATABASE_URL}
         - name: APP_SECRET
-          value: replace-with-a-random-string
+          value: ${UMAMI_APP_SECRET}
 ---
 apiVersion: v1
 kind: Service

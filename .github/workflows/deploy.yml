@@ -52,6 +52,7 @@ jobs:
       - name: Deploy PostgreSQL (if not exists)
         env:
           KUBECONFIG: /home/doradora1/.kube/config
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           if ! kubectl get svc postgres &> /dev/null; then
             echo "PostgreSQL をデプロイ中..."
@@ -59,7 +60,8 @@ jobs:
             # PVC が完全に削除されるまで待機
             kubectl wait --for=delete pvc/postgres-pvc -n default --timeout=120s || true
             sleep 2
-            kubectl apply -f infrastructure/k8s/postgres.yaml
+            envsubst < infrastructure/k8s/postgres.yaml > postgres-temp.yaml
+            kubectl apply -f postgres-temp.yaml
             kubectl wait --for=condition=ready pod -l app=postgres --timeout=300s
           else
             echo "PostgreSQL は既に起動しています"
@@ -68,7 +70,7 @@ jobs:
       - name: Prisma Migrate Deploy
         env:
           KUBECONFIG: /home/doradora1/.kube/config
-          DATABASE_URL: postgresql://postgres:your-secure-password-here@postgres.default.svc.cluster.local:5432/money_db
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           POD_NAME="prisma-migrate-$(date +%s)"
           
@@ -91,6 +93,15 @@ jobs:
           # Pod を削除
           kubectl delete pod $POD_NAME --ignore-not-found=true
 
+      - name: Prepare Kubernetes manifests
+        env:
+          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          UMAMI_DATABASE_URL: ${{ secrets.UMAMI_DATABASE_URL }}
+          UMAMI_APP_SECRET: ${{ secrets.UMAMI_APP_SECRET }}
+        run: |
+          envsubst < infrastructure/k8s/cloudflare-tunnel.yaml > cloudflare-tunnel-temp.yaml
+          envsubst < infrastructure/k8s/umami.yaml > umami-temp.yaml
+
       # アプリのデプロイなど（既存のステップ）
       - name: Deploy to K3s
         env:
@@ -111,10 +122,11 @@ jobs:
 
           sleep 2
 
-          kubectl apply -f infrastructure/k8s/postgres.yaml
           kubectl apply -f infrastructure/k8s/money-dashboard.yaml
           kubectl apply -f infrastructure/k8s/nginx-deployment.yaml
           kubectl apply -f infrastructure/k8s/nginx-service.yaml
+          kubectl apply -f cloudflare-tunnel-temp.yaml
+          kubectl apply -f umami-temp.yaml
           kubectl apply -R -f infrastructure/k8s/monitoring
           kubectl rollout restart deployment/money-dashboard -n default || true
           kubectl rollout status deployment/money-dashboard -n default --timeout=180s || true
