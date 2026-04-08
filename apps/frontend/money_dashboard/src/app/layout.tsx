@@ -33,7 +33,7 @@ export default function RootLayout({
         <script
           async
           src="https://analytics.doradora58.com/script.js"
-          data-website-id="883a8139-95a9-465e-ade4-d104fb1ca302"
+          data-website-id="ecb2edeb-5c52-46b6-b713-c68ede060915"
         ></script>
       </head>
       <body
