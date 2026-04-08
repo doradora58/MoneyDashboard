@@ -19,10 +19,9 @@ spec:
         - containerPort: 3000
         env:
         - name: DATABASE_URL
-          # postgres-service は先ほど作ったDBのサービス名です
-          value: "postgresql://doradora:password@postgres-service:5432/umami"
+          value: postgresql://postgres:your-secure-password-here@postgres.default.svc.cluster.local:5432/umami
         - name: APP_SECRET
-          value: "replace-with-a-random-string" # 適当な長い文字列に変えてください
+          value: replace-with-a-random-string
 ---
 apiVersion: v1
 kind: Service
