@@ -56,6 +56,9 @@ jobs:
           if ! kubectl get svc postgres &> /dev/null; then
             echo "PostgreSQL をデプロイ中..."
             kubectl delete pvc postgres-pvc --ignore-not-found=true
+            # PVC が完全に削除されるまで待機
+            kubectl wait --for=delete pvc/postgres-pvc -n default --timeout=120s || true
+            sleep 2
             kubectl apply -f infrastructure/k8s/postgres.yaml
             kubectl wait --for=condition=ready pod -l app=postgres --timeout=300s
           else
