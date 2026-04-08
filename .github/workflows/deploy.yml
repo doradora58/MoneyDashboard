@@ -93,17 +93,23 @@ jobs:
         env:
           KUBECONFIG: /home/doradora1/.kube/config
         run: |
+          set -euo pipefail
+
+          echo "cwd:"
+          pwd
+          echo "k8s files:"
+          find infrastructure/k8s -maxdepth 2 -type f | sort
+
           kubectl get nodes
-          
-          # 既存の postgres PVC を削除（リサイズエラー回避）
-          kubectl delete pvc postgres-pvc --ignore-not-found=true
-          
-          # 少し待機
-          sleep 5
-          
-          # マニフェストを適用
+
+          # PVC を毎回消さない方が安全。
+          # 必要なら手動で一度だけ消す。
+          # kubectl delete pvc postgres-pvc --ignore-not-found=true || true
+
+          sleep 2
+
           kubectl apply -R -f infrastructure/k8s/
-          
-          # Deployment の再起動
           kubectl rollout restart deployment/money-dashboard -n default || true
+          kubectl rollout status deployment/money-dashboard -n default --timeout=180s || true
           kubectl rollout restart deployment/postgres -n default || true
+          kubectl rollout status deployment/postgres -n default --timeout=180s || true
