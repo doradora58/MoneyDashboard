@@ -1,134 +1,36 @@
-name: K3s Build and Deploy
+name: Docker Compose Deploy
+
 on:
   push:
     branches:
       - main
 
 jobs:
-  build-and-push:
-    runs-on: self-hosted 
+  build-and-deploy:
+    runs-on: self-hosted
     permissions:
       contents: read
-      packages: write
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./apps/frontend/money_dashboard/Dockerfile
-          push: true
-          platforms: linux/arm64
-          tags: ghcr.io/${{ github.repository_owner }}/money-dashboard:latest
-
-  deploy:
-    needs: build-and-push # ビルドが終わってから実行
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Test DB Connection from Runner
-        run: |
-          DB_HOST=$(echo "${{ secrets.DATABASE_URL }}" | awk -F'[@:/]' '{print $(NF-2)}')
-          DB_PORT=$(echo "${{ secrets.DATABASE_URL }}" | awk -F'[:/]' '{print $(NF-1)}')
-          echo "Testing connection to $DB_HOST on port $DB_PORT"
-          if ! nc -zv $DB_HOST $DB_PORT; then
-            echo "Warning: Could not connect to database. Checking if it's a network issue..."
-            ping -c 1 $DB_HOST || echo "Host unreachable"
-          fi
-        continue-on-error: true
-      - name: Deploy PostgreSQL (if not exists)
+      - name: Build and start services
         env:
-          KUBECONFIG: /home/doradora1/.kube/config
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'postgres' }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB || 'money_dashboard' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@db:5432/money_dashboard?schema=public' }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'change-me' }}
+          IMAGE_REPOSITORY: ${{ secrets.IMAGE_REPOSITORY || 'money-dashboard:local' }}
         run: |
-          if ! kubectl get svc postgres &> /dev/null; then
-            echo "PostgreSQL をデプロイ中..."
-            kubectl delete pvc postgres-pvc --ignore-not-found=true
-            # PVC が完全に削除されるまで待機
-            kubectl wait --for=delete pvc/postgres-pvc -n default --timeout=120s || true
-            sleep 2
-            envsubst < infrastructure/k8s/postgres.yaml > postgres-temp.yaml
-            kubectl apply -f postgres-temp.yaml
-            kubectl wait --for=condition=ready pod -l app=postgres --timeout=300s
-          else
-            echo "PostgreSQL は既に起動しています"
-          fi
+          docker compose down --remove-orphans || true
+          docker compose up -d --build
 
-      - name: Prisma Migrate Deploy
-        env:
-          KUBECONFIG: /home/doradora1/.kube/config
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Show status
         run: |
-          POD_NAME="prisma-migrate-$(date +%s)"
-          
-          kubectl run $POD_NAME \
-            --image=ghcr.io/${{ github.repository_owner }}/money-dashboard:latest \
-            --restart=Never \
-            --overrides='{"spec":{"containers":[{"name":"prisma-migrate","image":"ghcr.io/${{ github.repository_owner }}/money-dashboard:latest","volumeMounts":[{"name":"prisma-vol","mountPath":"/app/prisma"}]}],"volumes":[{"name":"prisma-vol","hostPath":{"path":"/home/doradora1/_work/MoneyDashboard/MoneyDashboard/prisma"}}]}}' \
-            -- npx prisma migrate deploy
-          
-          # Pod の完了を待機（最大5分）
-          kubectl wait --for=condition=Ready pod/$POD_NAME --timeout=300s || true
-          sleep 10
-          
-          # ログを確認
-          kubectl logs $POD_NAME || true
-          
-          # Pod のステータス確認
-          kubectl get pod $POD_NAME -o jsonpath='{.status.phase}'
-          
-          # Pod を削除
-          kubectl delete pod $POD_NAME --ignore-not-found=true
-
-      - name: Prepare Kubernetes manifests
-        env:
-          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
-          UMAMI_DATABASE_URL: ${{ secrets.UMAMI_DATABASE_URL }}
-          UMAMI_APP_SECRET: ${{ secrets.UMAMI_APP_SECRET }}
-        run: |
-          envsubst < infrastructure/k8s/cloudflare-tunnel.yaml > cloudflare-tunnel-temp.yaml
-          envsubst < infrastructure/k8s/umami.yaml > umami-temp.yaml
-
-      # アプリのデプロイなど（既存のステップ）
-      - name: Deploy to K3s
-        env:
-          KUBECONFIG: /home/doradora1/.kube/config
-        run: |
-          set -euo pipefail
-
-          echo "cwd:"
-          pwd
-          echo "k8s files:"
-          find infrastructure/k8s -maxdepth 2 -type f | sort
-
-          kubectl get nodes
-
-          # PVC を毎回消さない方が安全。
-          # 必要なら手動で一度だけ消す。
-          # kubectl delete pvc postgres-pvc --ignore-not-found=true || true
-
-          sleep 2
-
-          kubectl apply -f infrastructure/k8s/money-dashboard.yaml
-          kubectl apply -f infrastructure/k8s/nginx-deployment.yaml
-          kubectl apply -f infrastructure/k8s/nginx-service.yaml
-          kubectl apply -f cloudflare-tunnel-temp.yaml
-          kubectl apply -f umami-temp.yaml
-          kubectl apply -R -f infrastructure/k8s/monitoring
-          kubectl rollout restart deployment/money-dashboard -n default || true
-          kubectl rollout status deployment/money-dashboard -n default --timeout=180s || true
-          kubectl rollout restart deployment/postgres -n default || true
-          kubectl rollout status deployment/postgres -n default --timeout=180s || true
+          docker compose ps
+          docker compose logs --tail=100 app || true
