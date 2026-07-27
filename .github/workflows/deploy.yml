@@ -115,11 +115,6 @@ jobs:
           find infrastructure/k8s -maxdepth 2 -type f | sort
 
           kubectl get nodes
-
-          # PVC を毎回消さない方が安全。
-          # 必要なら手動で一度だけ消す。
-          # kubectl delete pvc postgres-pvc --ignore-not-found=true || true
-
           sleep 2
 
           kubectl apply -f infrastructure/k8s/money-dashboard.yaml
