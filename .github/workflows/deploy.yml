@@ -25,6 +25,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@db:5432/money_dashboard?schema=public' }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'change-me' }}
+          UMAMI_DATABASE_URL: ${{ secrets.UMAMI_DATABASE_URL || 'postgresql://postgres:postgres@db:5432/money_dashboard?schema=public' }}
+          UMAMI_APP_SECRET: ${{ secrets.UMAMI_APP_SECRET || 'change-me' }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER || 'admin' }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD || 'admin' }}
           IMAGE_REPOSITORY: ${{ secrets.IMAGE_REPOSITORY || 'money-dashboard:local' }}
         run: |
           docker compose down --remove-orphans || true
